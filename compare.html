@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compare - doodleviews</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%233366cc'/%3E%3Cpath d='M5 24h5l4-2 4-15 4 13 5 1' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+</head>
+<body>
+<nav class="app-nav" aria-label="Pages">
+  <a href="index.html">Single article</a>
+  <a href="compare.html" aria-current="page">Compare</a>
+</nav>
+<main class="app-main">
+  <header class="app-header">
+    <h1>doodleviews</h1>
+  </header>
+
+  <div class="cdx-message" id="note">
+    <p>Views of six English Wikipedia articles around the day each one got a Google Doodle in 2013: Celia Cruz, Shakuntala Devi, Raymond Loewy, Hermann Rorschach, Maria Callas and Grace Hopper.</p>
+    <p>Disclaimers about this data:</p>
+    <ul>
+      <li>The data is taken from pagecounts-ez. It only counts desktop views. There is no filter for bots, spiders or crawlers.</li>
+      <li>Times on this data are in UTC.</li>
+      <li>"No data" means the dump didn't record any data for that hour. It doesn't mean zero views.</li>
+    </ul>
+  </div>
+  <noscript><div class="cdx-message">JavaScript is required for the charts. The data is in hourly.csv and daily.csv.</div></noscript>
+
+  <section class="app-output" aria-labelledby="chart-title">
+    <div class="app-output-header">
+      <h2 id="chart-title">Overlay</h2>
+      <div style="display:flex; flex-wrap:wrap; gap:8px">
+        <div class="cdx-toggle-button-group" role="group" aria-label="Range">
+          <button type="button" class="cdx-toggle-button cdx-toggle-button--toggled-on" data-range="2" aria-pressed="true">&plusmn;2 days</button>
+          <button type="button" class="cdx-toggle-button" data-range="3" aria-pressed="false">&plusmn;3 days</button>
+          <button type="button" class="cdx-toggle-button" data-range="7" aria-pressed="false">&plusmn;7 days</button>
+        </div>
+        <div class="cdx-toggle-button-group" role="group" aria-label="Y axis scale">
+          <button type="button" class="cdx-toggle-button cdx-toggle-button--toggled-on" data-scale="linear" aria-pressed="true">Linear</button>
+          <button type="button" class="cdx-toggle-button" data-scale="log" aria-pressed="false">Log</button>
+        </div>
+      </div>
+    </div>
+    <div class="picker" id="picker" role="group" aria-label="Articles to show"></div>
+    <div class="chart" id="chart" style="margin-top: 16px"></div>
+    <p class="app-note" id="chart-note"></p>
+  </section>
+
+  <section class="app-output" aria-labelledby="table-title">
+    <div class="app-output-header">
+      <h2 id="table-title">Table <span class="dates">all articles, same range</span></h2>
+      <button type="button" class="cdx-button" id="compare-download">Download csv</button>
+    </div>
+    <div class="tablewrap" id="compare-table"></div>
+    <p class="app-note" id="table-note"></p>
+  </section>
+</main>
+
+<footer class="app-footer">
+  Source code: <a href="https:github.com/noncesura/doodleviews" rel="noopener">GitHub</a>. Data: <a href="https://dumps.wikimedia.org/other/pagecounts-ez/" rel="noopener">pagecounts-ez</a> dumps from Wikimedia, hour labels shifted back one hour.
+  See also <a href="https://dumps.wikimedia.org/other/pageview_complete/" rel="noopener">Pageview Complete</a>.
+</footer>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, el, num, pretty, dateMs, offsetLabel, dateFmt, pad, DAY_MS } = PV;
+  const MAX_RANGE = 7;
+  const state = { picked: new Set(), scale: 'linear', range: 2 };
+  let data;
+  let modelAll;
+
+  const currentModel = () => modelAll.filter((r) => Math.abs(r.off) <= state.range);
+
+  const colorOf = (article) => 'var(--series-' + (data.articles.indexOf(article) + 1) + ')';
+
+  // Hours are keyed by distance from the start of day 0, so articles with different dates line up.
+  function buildModel() {
+    const byArticle = new Map();
+    data.articles.forEach((a) => {
+      const d0ms = dateMs(data.day0.get(a));
+      const m = new Map();
+      data.hourlyBy.get(a).forEach((r) => {
+        m.set(Math.round((dateMs(r.date) - d0ms) / DAY_MS) * 24 + r.hour, r.views);
+      });
+      byArticle.set(a, m);
+    });
+    const rows = [];
+    for (let k = 0; k < (2 * MAX_RANGE + 1) * 24; k++) {
+      const key = -MAX_RANGE * 24 + k;
+      rows.push({
+        off: Math.floor(key / 24),
+        hour: ((key % 24) + 24) % 24,
+        values: data.articles.map((a) => {
+          const v = byArticle.get(a).get(key);
+          return v === undefined ? null : v;
+        })
+      });
+    }
+    return rows;
+  }
+
+  function renderPicker() {
+    const host = $('picker');
+    host.replaceChildren();
+    data.articles.forEach((a) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip';
+      b.setAttribute('aria-pressed', String(state.picked.has(a)));
+      const sw = document.createElement('span');
+      sw.className = 'swatch';
+      sw.style.setProperty('--c', colorOf(a));
+      b.appendChild(sw);
+      b.appendChild(document.createTextNode(pretty(a)));
+      b.addEventListener('click', () => {
+        if (state.picked.has(a)) state.picked.delete(a); else state.picked.add(a);
+        renderPicker();
+        renderChart();
+      });
+      host.appendChild(b);
+    });
+  }
+
+  function renderChart() {
+    const host = $('chart');
+    host.replaceChildren();
+    const model = currentModel();
+    const HOURS = model.length;
+    const picked = data.articles.filter((a) => state.picked.has(a));
+    const idx = picked.map((a) => data.articles.indexOf(a));
+    const log = state.scale === 'log';
+
+    $('chart-note').textContent = log
+      ? 'Log scale: each gridline is ten times the one below. Hours with zero views are left out.'
+      : 'Linear scale flattens a small article next to a big one. Try log.';
+
+    if (!picked.length) {
+      const p = document.createElement('p');
+      p.className = 'empty';
+      p.textContent = 'Pick at least one article.';
+      host.appendChild(p);
+      return;
+    }
+
+    const W = Math.max(320, host.clientWidth);
+    const H = 360;
+    const m = { l: 52, r: 16, t: 16, b: 44 };
+    const plotW = W - m.l - m.r;
+    const bottom = H - m.b;
+    const x = (i) => m.l + (i / (HOURS - 1)) * plotW;
+    const step = plotW / (HOURS - 1);
+
+    let maxVal = 0;
+    let minPos = Infinity;
+    model.forEach((r) => {
+      idx.forEach((c) => {
+        const v = r.values[c];
+        if (v === null) return;
+        if (v > maxVal) maxVal = v;
+        if (v > 0 && v < minPos) minPos = v;
+      });
+    });
+    const scale = PV.makeScale(maxVal, m.t, bottom, { log: log, minPos: isFinite(minPos) ? minPos : 1 });
+    const drawable = (v) => v !== null && (!log || v > 0);
+
+    const svg = el('svg', { width: W, height: H, viewBox: '0 0 ' + W + ' ' + H, tabindex: '0', role: 'img',
+      'aria-label': 'Line chart of hourly views for ' + picked.map(pretty).join(', ') + '. Use the arrow keys to read values, or see the table below.' }, host);
+
+    const d0i = state.range * 24;
+    el('rect', { class: 'day0', x: x(d0i) - step / 2, y: m.t, width: 24 * step, height: bottom - m.t }, svg);
+    PV.yAxis(svg, scale, m, W);
+
+    const labelStride = Math.max(1, Math.ceil(52 / (24 * step)));
+    for (let off = -state.range; off <= state.range; off++) {
+      const k = (off + state.range) * 24;
+      el('line', { class: 'grid', x1: x(k), x2: x(k), y1: m.t, y2: bottom }, svg);
+      if (off % labelStride !== 0) continue;
+      const anchor = k === 0 ? 'start' : 'middle';
+      const t = el('text', { x: x(k), y: bottom + 16, 'text-anchor': anchor, class: off === 0 ? 'strong' : '' }, svg);
+      t.textContent = offsetLabel(off);
+    }
+
+    picked.forEach((a, n) => {
+      const c = idx[n];
+      let d = '';
+      let pen = false;
+      model.forEach((r, k) => {
+        const v = r.values[c];
+        if (!drawable(v)) { pen = false; return; }
+        d += (pen ? 'L' : 'M') + x(k).toFixed(1) + ',' + scale.y(v).toFixed(1);
+        if (!pen) d += 'l0.01,0';
+        pen = true;
+      });
+      el('path', { class: 'compare-line', d: d, style: 'stroke:' + colorOf(a) }, svg);
+    });
+
+    const cross = el('line', { class: 'cross', y1: m.t, y2: bottom, visibility: 'hidden' }, svg);
+    const dots = picked.map((a) => el('circle', { class: 'dot', r: 4, visibility: 'hidden', style: 'fill:' + colorOf(a) }, svg));
+    const tip = PV.makeTip(host);
+
+    function show(k) {
+      const r = model[k];
+      const cx = x(k);
+      cross.setAttribute('x1', cx); cross.setAttribute('x2', cx); cross.setAttribute('visibility', 'visible');
+      const rows = [{ text: offsetLabel(r.off) + ', ' + pad(r.hour) + ':00 UTC', cls: 'when' }];
+      picked.forEach((a, n) => {
+        const v = r.values[idx[n]];
+        if (drawable(v)) {
+          dots[n].setAttribute('cx', cx); dots[n].setAttribute('cy', scale.y(v)); dots[n].setAttribute('visibility', 'visible');
+        } else dots[n].setAttribute('visibility', 'hidden');
+        rows.push({ text: pretty(a) + ': ' + (v === null ? 'no data' : num(v)), cls: 'val', color: colorOf(a) });
+      });
+      tip.show(cx, m.t, rows);
+    }
+    function hide() {
+      cross.setAttribute('visibility', 'hidden');
+      dots.forEach((d) => d.setAttribute('visibility', 'hidden'));
+      tip.hide();
+    }
+    function indexAt(evt) {
+      const box = svg.getBoundingClientRect();
+      const px = (evt.clientX - box.left) * (W / box.width);
+      return Math.max(0, Math.min(HOURS - 1, Math.round(((px - m.l) / plotW) * (HOURS - 1))));
+    }
+    let current = d0i + 12;
+    svg.addEventListener('pointermove', (e) => { current = indexAt(e); show(current); });
+    svg.addEventListener('pointerleave', hide);
+    svg.addEventListener('focus', () => show(current));
+    svg.addEventListener('blur', hide);
+    svg.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') current = Math.min(HOURS - 1, current + 1);
+      else if (e.key === 'ArrowLeft') current = Math.max(0, current - 1);
+      else return;
+      e.preventDefault();
+      show(current);
+    });
+  }
+
+  function renderTable() {
+    const headers = ['Day', 'Hour (UTC)'].concat(data.articles.map((a) => ({
+      name: pretty(a), sub: dateFmt.format(dateMs(data.day0.get(a)))
+    })));
+    const model = currentModel();
+    const body = model.map((r) => ({
+      className: (r.off === 0 ? 'is-day0 ' : '') + (r.hour === 0 ? 'day-start' : ''),
+      cells: [offsetLabel(r.off), pad(r.hour) + ':00'].concat(r.values.map((v) => (v === null ? null : num(v))))
+    }));
+    const table = PV.buildTable($('compare-table'), headers, body, 'Hourly views for every article', 2);
+    table.classList.add('app-stats--compare');
+    $('table-note').textContent = 'Rows are counted from the start of ' + offsetLabel(-state.range)
+      + ' of each article. The date under each name is its day 0. The csv holds the same rows, with one column per article.';
+  }
+
+  function download() {
+    const lines = [['day_offset', 'hour_utc'].concat(data.articles).join(',')];
+    currentModel().forEach((r) => {
+      lines.push([r.off, r.hour].concat(r.values.map((v) => (v === null ? '' : v))).join(','));
+    });
+    const url = URL.createObjectURL(new Blob([lines.join('\n') + '\n'], { type: 'text/csv' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'comparison-table.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  PV.load().then((d) => {
+    data = d;
+    modelAll = buildModel();
+    ['Celia_Cruz', 'Grace_Hopper'].forEach((a) => { if (data.articles.indexOf(a) >= 0) state.picked.add(a); });
+    document.querySelectorAll('[data-scale]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        state.scale = btn.getAttribute('data-scale');
+        document.querySelectorAll('[data-scale]').forEach((b) => {
+          const on = b === btn;
+          b.classList.toggle('cdx-toggle-button--toggled-on', on);
+          b.setAttribute('aria-pressed', String(on));
+        });
+        renderChart();
+      });
+    });
+    document.querySelectorAll('[data-range]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        state.range = Number(btn.getAttribute('data-range'));
+        document.querySelectorAll('[data-range]').forEach((b) => {
+          const on = b === btn;
+          b.classList.toggle('cdx-toggle-button--toggled-on', on);
+          b.setAttribute('aria-pressed', String(on));
+        });
+        renderChart();
+        renderTable();
+      });
+    });
+    $('compare-download').addEventListener('click', download);
+    PV.watchResize($('chart'), renderChart);
+    renderPicker();
+    renderChart();
+    renderTable();
+  }).catch(PV.fail);
+})();
+</script>
+</body>
+</html>

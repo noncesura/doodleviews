@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>doodleviews</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%233366cc'/%3E%3Cpath d='M5 24h5l4-2 4-15 4 13 5 1' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+</head>
+<body>
+<nav class="app-nav" aria-label="Pages">
+  <a href="index.html" aria-current="page">Single article</a>
+  <a href="compare.html">Compare</a>
+</nav>
+<main class="app-main">
+  <header class="app-header">
+    <h1>doodleviews</h1>
+  </header>
+
+  <div class="cdx-message" id="note">
+    <p>Views of six English Wikipedia articles around the day each one got a Google Doodle in 2013: Celia Cruz, Shakuntala Devi, Raymond Loewy, Hermann Rorschach, Maria Callas and Grace Hopper.</p>
+    <p>Disclaimers about this data:</p>
+    <ul>
+      <li>The data is taken from pagecounts-ez. It only counts desktop views. There is no filter for bots, spiders or crawlers.</li>
+      <li>Times on this data are in UTC.</li>
+      <li>"No data" means the dump didn't record any data for that hour. It doesn't mean zero views.</li>
+    </ul>
+  </div>
+  <noscript><div class="cdx-message">JavaScript is required for the charts. The data is in hourly.csv and daily.csv.</div></noscript>
+
+  <div class="app-toolbar">
+    <label for="article">Article</label>
+    <select id="article"></select>
+  </div>
+
+  <section class="app-output" aria-labelledby="hourly-title">
+    <div class="app-output-header">
+      <h2 id="hourly-title">Hourly views <span class="dates" id="hourly-sub"></span></h2>
+    </div>
+    <div class="app-controls">
+      <div class="app-tabs" role="group" aria-label="Hourly views display">
+        <button type="button" class="app-tab is-selected" data-target="hourly" data-view="chart" aria-pressed="true">Chart</button>
+        <button type="button" class="app-tab" data-target="hourly" data-view="table" aria-pressed="false">Table</button>
+      </div>
+      <div class="app-options">
+      <div class="cdx-toggle-button-group" role="group" aria-label="Hourly range">
+        <button type="button" class="cdx-toggle-button cdx-toggle-button--toggled-on" data-range="3" aria-pressed="true">&plusmn;3 days</button>
+        <button type="button" class="cdx-toggle-button" data-range="7" aria-pressed="false">&plusmn;7 days</button>
+      </div>
+        <div class="cdx-toggle-button-group" role="group" aria-label="Hourly scale" id="hourly-scale-group">
+          <button type="button" class="cdx-toggle-button cdx-toggle-button--toggled-on" data-for="hourly" data-scale="linear" aria-pressed="true">Linear</button>
+          <button type="button" class="cdx-toggle-button" data-for="hourly" data-scale="log" aria-pressed="false">Log</button>
+        </div>
+      </div>
+    </div>
+    <div class="chart" id="hourly-chart"></div>
+    <div class="tablewrap" id="hourly-table" hidden></div>
+  </section>
+
+  <section class="app-output" aria-labelledby="daily-title">
+    <div class="app-output-header">
+      <h2 id="daily-title">Daily views <span class="dates" id="daily-sub"></span></h2>
+    </div>
+    <div class="app-controls">
+      <div class="app-tabs" role="group" aria-label="Daily views display">
+        <button type="button" class="app-tab is-selected" data-target="daily" data-view="chart" aria-pressed="true">Chart</button>
+        <button type="button" class="app-tab" data-target="daily" data-view="table" aria-pressed="false">Table</button>
+      </div>
+      <div class="app-options">
+        <div class="cdx-toggle-button-group" role="group" aria-label="Daily scale" id="daily-scale-group">
+          <button type="button" class="cdx-toggle-button cdx-toggle-button--toggled-on" data-for="daily" data-scale="linear" aria-pressed="true">Linear</button>
+          <button type="button" class="cdx-toggle-button" data-for="daily" data-scale="log" aria-pressed="false">Log</button>
+        </div>
+      </div>
+    </div>
+    <div class="chart" id="daily-chart"></div>
+    <div class="tablewrap" id="daily-table" hidden></div>
+    <p class="app-note" id="daily-note"></p>
+  </section>
+
+  <section class="app-output" aria-labelledby="data-title">
+    <div class="app-output-header">
+      <h2 id="data-title">Data files</h2>
+    </div>
+    <div class="tablewrap tablewrap--free">
+      <table class="app-stats app-stats--files">
+        <caption hidden>Downloadable data files</caption>
+        <thead><tr><th scope="col">File</th><th scope="col">Rows</th><th scope="col">Columns</th></tr></thead>
+        <tbody>
+          <tr>
+            <th scope="row"><a href="hourly.csv" download>hourly.csv</a></th>
+            <td>Article and UTC hour, day -7 to day +7</td>
+            <td><code>article</code>, <code>date</code>, <code>hour_utc</code>, <code>views</code>, <code>suspected_gap</code></td>
+          </tr>
+          <tr>
+            <th scope="row"><a href="daily.csv" download>daily.csv</a></th>
+            <td>Article and UTC day, day -7 to day +7</td>
+            <td><code>article</code>, <code>date</code>, <code>day_offset</code>, <code>views</code>, <code>gap_hours</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="app-note">Empty <code>views</code> means no data (<code>suspected_gap</code> is 1). <code>gap_hours</code> counts those hours per day, so above 0 the daily total is an undercount.</p>
+  </section>
+</main>
+
+<footer class="app-footer">
+  Source code: <a href="https:github.com/noncesura/doodleviews" rel="noopener">GitHub</a>. Data: <a href="https://dumps.wikimedia.org/other/pagecounts-ez/" rel="noopener">pagecounts-ez</a> dumps from Wikimedia, hour labels shifted back one hour.
+  See also <a href="https://dumps.wikimedia.org/other/pageview_complete/" rel="noopener">Pageview Complete</a>.
+</footer>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, el, num, pretty, dateMs, offsetLabel, timeFmt, shortFmt, dateFmt, dayFmt, DAY_MS } = PV;
+  const state = { article: null, range: 3, scale: { hourly: 'linear', daily: 'linear' }, view: { hourly: 'chart', daily: 'chart' } };
+  let data;
+
+  function hourlyRows() {
+    const d0ms = dateMs(data.day0.get(state.article));
+    return data.hourlyBy.get(state.article).filter((r) => Math.abs(Math.round((dateMs(r.date) - d0ms) / DAY_MS)) <= state.range);
+  }
+
+  function renderHourly() {
+    const host = $('hourly-chart');
+    host.replaceChildren();
+    const rows = hourlyRows();
+    const d0 = data.day0.get(state.article);
+    const log = state.scale.hourly === 'log';
+    const drawable = (r) => r.views !== null && (!log || r.views > 0);
+    const N = rows.length;
+    const W = Math.max(320, host.clientWidth);
+    const H = 320;
+    const m = { l: 52, r: 16, t: 24, b: 44 };
+    const plotW = W - m.l - m.r;
+    const bottom = H - m.b;
+
+    const maxVal = rows.reduce((a, r) => (r.views !== null && r.views > a ? r.views : a), 0);
+    const minPos = rows.reduce((a, r) => (r.views > 0 && r.views < a ? r.views : a), Infinity);
+    const scale = PV.makeScale(maxVal, m.t, bottom, { log: log, minPos: isFinite(minPos) ? minPos : 1 });
+    const x = (i) => m.l + (i / (N - 1)) * plotW;
+    const step = plotW / (N - 1);
+
+    const svg = el('svg', { width: W, height: H, viewBox: '0 0 ' + W + ' ' + H, tabindex: '0', role: 'img',
+      'aria-label': 'Line chart of hourly views for ' + pretty(state.article) + '. Use the arrow keys to read values, or switch to the table.' }, host);
+
+    const first = rows.findIndex((r) => r.date === d0);
+    let last = first;
+    rows.forEach((r, i) => { if (r.date === d0) last = i; });
+    if (first >= 0) {
+      el('rect', { class: 'day0', x: x(first) - step / 2, y: m.t, width: (last - first + 1) * step, height: bottom - m.t }, svg);
+    }
+    let i = 0;
+    while (i < N) {
+      if (!rows[i].gap) { i++; continue; }
+      let j = i;
+      while (j + 1 < N && rows[j + 1].gap) j++;
+      const bx = Math.max(m.l, x(i) - step / 2);
+      const bw = Math.min(m.l + plotW, x(j) + step / 2) - bx;
+      el('rect', { class: 'band', x: bx, y: m.t, width: bw, height: bottom - m.t }, svg);
+      if (bw > 60) {
+        const t = el('text', { x: bx + bw / 2, y: m.t + 14, 'text-anchor': 'middle' }, svg);
+        t.textContent = 'no data';
+      }
+      i = j + 1;
+    }
+
+    PV.yAxis(svg, scale, m, W);
+
+    const labelStride = Math.max(1, Math.ceil(48 / (24 * step)));
+    rows.forEach((r, k) => {
+      if (r.hour !== 0) return;
+      el('line', { class: 'grid', x1: x(k), x2: x(k), y1: m.t, y2: bottom }, svg);
+      const off = Math.round((dateMs(r.date) - dateMs(d0)) / DAY_MS);
+      if (off % labelStride !== 0) return;
+      const anchor = k === 0 ? 'start' : 'middle';
+      const t1 = el('text', { x: x(k), y: bottom + 16, 'text-anchor': anchor, class: off === 0 ? 'strong' : '' }, svg);
+      t1.textContent = shortFmt.format(r.t);
+      const t2 = el('text', { x: x(k), y: bottom + 30, 'text-anchor': anchor, class: off === 0 ? 'strong' : '' }, svg);
+      t2.textContent = offsetLabel(off);
+    });
+
+    let d = '';
+    let pen = false;
+    rows.forEach((r, k) => {
+      if (!drawable(r)) { pen = false; return; }
+      d += (pen ? 'L' : 'M') + x(k).toFixed(1) + ',' + scale.y(r.views).toFixed(1);
+      if (!pen) d += 'l0.01,0';
+      pen = true;
+    });
+    el('path', { class: 'line', d: d }, svg);
+
+    let peak = -1;
+    rows.forEach((r, k) => { if (r.views !== null && (peak < 0 || r.views > rows[peak].views)) peak = k; });
+    if (peak >= 0 && rows[peak].views > 0) {
+      PV.peakLabel(svg, x(peak), scale.y(rows[peak].views), num(rows[peak].views), m, W);
+    }
+
+    const cross = el('line', { class: 'cross', y1: m.t, y2: bottom, visibility: 'hidden' }, svg);
+    const dot = el('circle', { class: 'dot', r: 4, visibility: 'hidden' }, svg);
+    const tip = PV.makeTip(host);
+
+    function show(k) {
+      const r = rows[k];
+      const cx = x(k);
+      cross.setAttribute('x1', cx); cross.setAttribute('x2', cx); cross.setAttribute('visibility', 'visible');
+      const when = { text: timeFmt.format(r.t) + ' UTC', cls: 'when' };
+      if (drawable(r)) {
+        dot.setAttribute('cx', cx); dot.setAttribute('cy', scale.y(r.views)); dot.setAttribute('visibility', 'visible');
+      } else dot.setAttribute('visibility', 'hidden');
+      tip.show(cx, m.t, [when, { text: r.views === null ? 'No data' : num(r.views) + ' views', cls: 'val' }]);
+    }
+    function hide() {
+      cross.setAttribute('visibility', 'hidden'); dot.setAttribute('visibility', 'hidden'); tip.hide();
+    }
+    function indexAt(evt) {
+      const box = svg.getBoundingClientRect();
+      const px = (evt.clientX - box.left) * (W / box.width);
+      return Math.max(0, Math.min(N - 1, Math.round(((px - m.l) / plotW) * (N - 1))));
+    }
+    let current = Math.max(peak, 0);
+    svg.addEventListener('pointermove', (e) => { current = indexAt(e); show(current); });
+    svg.addEventListener('pointerleave', hide);
+    svg.addEventListener('focus', () => show(current));
+    svg.addEventListener('blur', hide);
+    svg.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') current = Math.min(N - 1, current + 1);
+      else if (e.key === 'ArrowLeft') current = Math.max(0, current - 1);
+      else return;
+      e.preventDefault();
+      show(current);
+    });
+
+    $('hourly-sub').textContent = pretty(state.article) + ', ' + shortFmt.format(rows[0].t) + ' to '
+      + dateFmt.format(rows[N - 1].t);
+  }
+
+  function renderDaily() {
+    const host = $('daily-chart');
+    host.replaceChildren();
+    const rows = data.dailyBy.get(state.article);
+    const N = rows.length;
+    const W = Math.max(320, host.clientWidth);
+    const H = 300;
+    const m = { l: 52, r: 16, t: 24, b: 44 };
+    const plotW = W - m.l - m.r;
+    const bottom = H - m.b;
+    const band = plotW / N;
+    const bw = Math.min(24, band * 0.6);
+    const labelStride = Math.max(1, Math.ceil(46 / band));
+
+    const log = state.scale.daily === 'log';
+    const maxVal = rows.reduce((a, r) => (!r.blank && r.views > a ? r.views : a), 0);
+    const minPos = rows.reduce((a, r) => (!r.blank && r.views > 0 && r.views < a ? r.views : a), Infinity);
+    const scale = PV.makeScale(maxVal, m.t, bottom, { log: log, minPos: isFinite(minPos) ? minPos : 1 });
+    $('daily-note').textContent = (log ? 'Points instead of bars, since bar length means nothing on a log axis. ' : '')
+      + 'Blank day: 12 or more hours missing. Asterisk: some hours missing, so the total is an undercount.';
+
+    const svg = el('svg', { width: W, height: H, viewBox: '0 0 ' + W + ' ' + H, role: 'group',
+      'aria-label': 'Column chart of daily views for ' + pretty(state.article) + '. Switch to the table for all values.' }, host);
+    const back = el('g', null, svg);
+    rows.forEach((r, i) => {
+      const cx = m.l + band * (i + 0.5);
+      if (r.offset === 0) el('rect', { class: 'day0', x: cx - band / 2, y: m.t, width: band, height: bottom - m.t }, back);
+      if (r.blank) el('rect', { class: 'band', x: cx - band / 2, y: m.t, width: band, height: bottom - m.t }, back);
+    });
+    PV.yAxis(svg, scale, m, W);
+    const tip = PV.makeTip(host);
+
+    if (log) {
+      let d = '';
+      let pen = false;
+      rows.forEach((r, i) => {
+        if (r.blank || r.views <= 0) { pen = false; return; }
+        d += (pen ? 'L' : 'M') + (m.l + band * (i + 0.5)).toFixed(1) + ',' + scale.y(r.views).toFixed(1);
+        if (!pen) d += 'l0.01,0';
+        pen = true;
+      });
+      el('path', { class: 'line', d: d }, svg);
+    }
+
+    let peak = -1;
+    rows.forEach((r, i) => { if (!r.blank && (peak < 0 || r.views > rows[peak].views)) peak = i; });
+
+    rows.forEach((r, i) => {
+      const cx = m.l + band * (i + 0.5);
+      const label = dayFmt.format(dateMs(r.date)) + ' (' + offsetLabel(r.offset) + ')';
+      const missing = r.blank
+        ? r.gapHours + ' of 24 hours missing'
+        : r.gapHours + (r.gapHours === 1 ? ' hour' : ' hours') + ' missing, undercount';
+      const text = r.blank ? 'No data, ' + missing : num(r.views) + ' views' + (r.gapHours > 0 ? ', ' + missing : '');
+      const g = el('g', { class: 'slot', tabindex: '0', role: 'img', 'aria-label': label + ': ' + text }, svg);
+
+      if (!r.blank && log) {
+        if (r.views > 0) el('circle', { class: 'dot', cx: cx, cy: scale.y(r.views), r: 4 }, g);
+        if (r.gapHours > 0 && r.views > 0) {
+          const star = el('text', { x: cx, y: Math.max(scale.y(r.views) - 8, 12), 'text-anchor': 'middle' }, g);
+          star.textContent = '*';
+        }
+      } else if (!r.blank) {
+        const y = scale.y(r.views);
+        const h = bottom - y;
+        const x0 = cx - bw / 2;
+        const x1 = cx + bw / 2;
+        if (h >= 8) {
+          const rad = 4;
+          el('path', { class: 'bar', d: 'M' + x0 + ',' + bottom + 'L' + x0 + ',' + (y + rad) + 'Q' + x0 + ',' + y + ' ' + (x0 + rad) + ',' + y
+            + 'L' + (x1 - rad) + ',' + y + 'Q' + x1 + ',' + y + ' ' + x1 + ',' + (y + rad) + 'L' + x1 + ',' + bottom + 'Z' }, g);
+        } else if (h > 0) {
+          el('rect', { class: 'bar', x: x0, y: y, width: bw, height: h }, g);
+        }
+        if (r.gapHours > 0) {
+          const star = el('text', { x: cx, y: Math.max(y - 6, 12), 'text-anchor': 'middle' }, g);
+          star.textContent = '*';
+        }
+      }
+      el('rect', { class: 'focus-ring', x: cx - band / 2 + 1, y: m.t, width: band - 2, height: bottom - m.t, rx: 4 }, g);
+      el('rect', { x: cx - band / 2, y: m.t, width: band, height: bottom - m.t, fill: 'transparent' }, g);
+
+      const showTip = () => {
+        const rows2 = [{ text: label, cls: 'when' }, { text: r.blank ? 'No data' : num(r.views) + ' views', cls: 'val' }];
+        if (r.gapHours > 0) rows2.push({ text: missing, cls: 'extra' });
+        tip.show(cx, m.t + 36, rows2);
+      };
+      g.addEventListener('pointerenter', showTip);
+      g.addEventListener('pointermove', showTip);
+      g.addEventListener('pointerleave', tip.hide);
+      g.addEventListener('focus', showTip);
+      g.addEventListener('blur', tip.hide);
+
+      if (r.offset % labelStride === 0) {
+        const strong = r.offset === 0 ? 'strong' : '';
+        const t1 = el('text', { x: cx, y: bottom + 16, 'text-anchor': 'middle', class: strong }, svg);
+        t1.textContent = shortFmt.format(dateMs(r.date));
+        const t2 = el('text', { x: cx, y: bottom + 30, 'text-anchor': 'middle', class: strong }, svg);
+        t2.textContent = offsetLabel(r.offset);
+      }
+    });
+
+    if (peak >= 0 && rows[peak].views > 0) {
+      PV.peakLabel(svg, m.l + band * (peak + 0.5), scale.y(rows[peak].views), num(rows[peak].views), m, W);
+    }
+
+    $('daily-sub').textContent = pretty(state.article) + ', ' + shortFmt.format(dateMs(rows[0].date)) + ' to '
+      + dateFmt.format(dateMs(rows[N - 1].date));
+  }
+
+  function renderTables() {
+    if (state.view.hourly === 'table') {
+      PV.buildTable($('hourly-table'), ['Time (UTC)', 'Views'],
+        hourlyRows().map((r) => ({ cells: [timeFmt.format(r.t), r.views === null ? null : num(r.views)] })),
+        'Hourly views for ' + pretty(state.article), 1);
+    }
+    if (state.view.daily === 'table') {
+      PV.buildTable($('daily-table'), ['Date (UTC)', 'Day', 'Views', 'Hours missing'],
+        data.dailyBy.get(state.article).map((r) => ({ cells: [dayFmt.format(dateMs(r.date)), offsetLabel(r.offset),
+          r.blank ? null : num(r.views), String(r.gapHours)] })),
+        'Daily views for ' + pretty(state.article), 2);
+    }
+  }
+
+  function applyViews() {
+    ['hourly', 'daily'].forEach((which) => {
+      const view = state.view[which];
+      $(which + '-chart').hidden = view === 'table';
+      $(which + '-table').hidden = view === 'chart';
+      document.querySelectorAll('[data-target="' + which + '"]').forEach((btn) => {
+        const on = btn.getAttribute('data-view') === view;
+        btn.classList.toggle('is-selected', on);
+        btn.setAttribute('aria-pressed', String(on));
+      });
+      $(which + '-scale-group').hidden = view === 'table';
+    });
+  }
+
+  function renderAll() {
+    applyViews();
+    if (state.view.hourly === 'chart') renderHourly();
+    if (state.view.daily === 'chart') renderDaily();
+    renderTables();
+  }
+
+  PV.load().then((d) => {
+    data = d;
+    const select = $('article');
+    data.articles.forEach((article) => {
+      const opt = document.createElement('option');
+      opt.value = article;
+      opt.textContent = pretty(article);
+      select.appendChild(opt);
+    });
+    state.article = select.value;
+    select.addEventListener('change', () => { state.article = select.value; renderAll(); });
+    document.querySelectorAll('[data-for][data-scale]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const which = btn.getAttribute('data-for');
+        state.scale[which] = btn.getAttribute('data-scale');
+        document.querySelectorAll('[data-for="' + which + '"][data-scale]').forEach((b) => {
+          const on = b === btn;
+          b.classList.toggle('cdx-toggle-button--toggled-on', on);
+          b.setAttribute('aria-pressed', String(on));
+        });
+        renderAll();
+      });
+    });
+    document.querySelectorAll('[data-range]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        state.range = Number(btn.getAttribute('data-range'));
+        document.querySelectorAll('[data-range]').forEach((b) => {
+          const on = b === btn;
+          b.classList.toggle('cdx-toggle-button--toggled-on', on);
+          b.setAttribute('aria-pressed', String(on));
+        });
+        renderAll();
+      });
+    });
+    document.querySelectorAll('.app-tab[data-target]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        state.view[btn.getAttribute('data-target')] = btn.getAttribute('data-view');
+        renderAll();
+      });
+    });
+    PV.watchResize($('hourly-chart'), () => {
+      if (state.view.hourly === 'chart') renderHourly();
+      if (state.view.daily === 'chart') renderDaily();
+    });
+    renderAll();
+  }).catch(PV.fail);
+})();
+</script>
+</body>
+</html>
